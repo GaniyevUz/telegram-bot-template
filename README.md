@@ -9,8 +9,9 @@
   <a href="https://github.com/donBarbos/telegram-bot-template/actions/workflows/linters.yml"><img src="https://img.shields.io/github/actions/workflow/status/donBarbos/telegram-bot-template/linters.yml?label=linters" alt="Linters Status"></a>
   <a href="https://github.com/donBarbos/telegram-bot-template/actions/workflows/docker-image.yml"><img src="https://img.shields.io/github/actions/workflow/status/donBarbos/telegram-bot-template/docker-image.yml?label=docker%20image" alt="Docker Build Status"></a>
   <a href="https://www.python.org/downloads"><img src="https://img.shields.io/badge/python-3.10%2B-blue" alt="Python"></a>
-  <a href="https://github.com/donBarbos/telegram-bot-template/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-LGPLv3-blue.svg" alt="License"></a>
+  <a href="https://github.com/donBarbos/telegram-bot-template/blob/main/LICENSE"><img src="https://img.shields.io/github/license/donbarbos/telegram-bot-template?color=blue" alt="License"></a>
   <a href="https://github.com/astral-sh/ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json" alt="Code style"></a>
+  <a href="https://github.com/astral-sh/uv"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json" alt="Package manager"></a>
 <p>
 
 ## ✨ Features
@@ -42,32 +43,32 @@
 
 ### 💻 Running on Local Machine
 
--   install dependencies using [Poetry](https://python-poetry.org "python package manager")
+-   set environment and install dependencies using [uv](https://docs.astral.sh/uv/ "python package manager") (you can find branch with Poetry [here](https://github.com/donBarbos/telegram-bot-template/tree/poetry-archive))
 
     ```bash
-    poetry install
+    uv sync --frozen --all-groups
     ```
 
--   start the necessary services (at least the database and redis)
+-   start the necessary services (at least your database and redis)
 
 -   configure environment variables in `.env` file
 
 -   start telegram bot
 
     ```bash
-    poetry run python -m bot
+    uv run python -m bot
     ```
 
 -   start admin panel
 
     ```bash
-    poetry run gunicorn -c admin/gunicorn_conf.py
+    uv run gunicorn -c admin/gunicorn_conf.py
     ```
 
 -   make migrations
 
     ```bash
-    poetry run alembic upgrade head
+    uv run alembic upgrade head
     ```
 
 ## 🌍 Environment variables
@@ -164,11 +165,13 @@ to launch the bot you only need a token bot, database and redis settings, everyt
 │   └── prometheus # Configuration files for Prometheus
 │       └── prometheus.yml
 │
+├── scripts/ # Sripts folder
+├── Makefile # List of commands for standard
 ├── alembic.ini # Configuration file for migrations
 ├── docker-compose.yml # Docker Compose configuration file for orchestrating containers
 ├── Dockerfile # Dockerfile for Telegram Bot
 ├── LICENSE.md # License file for the project
-├── poetry.lock # Lock file for Poetry dependency management
+├── uv.lock # Lock file for UV dependency management
 ├── pyproject.toml # Configuration file for Python projects, including build tools, dependencies, and metadata
 └── README.md # Documentation
 ```
@@ -180,13 +183,17 @@ to launch the bot you only need a token bot, database and redis settings, everyt
 -   `aiogram` — asynchronous framework for Telegram Bot API
 -   `flask-admin` — simple and extensible administrative interface framework
 -   `loguru` — third party library for logging in Python
--   `poetry` — development workflow
+-   `uv` — development workflow
 -   `docker` — to automate deployment
 -   `postgres` — powerful, open source object-relational database system
 -   `pgbouncer` — connection pooler for PostgreSQL database
 -   `redis` — in-memory data structure store used as a cache and FSM
 -   `prometheus` — time series database for collecting metrics from various systems
 -   `grafana` — visualization and analysis from various sources, including Prometheus
+
+## ⭐ Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=donBarbos/telegram-bot-template&type=Date)](https://star-history.com/#donBarbos/telegram-bot-template&Date)
 
 ## 👷 Contributing
 
@@ -202,7 +209,7 @@ If you have a suggestion that would make this better, please fork the repo and c
 
 ## 📝 License
 
-Distributed under the LGPL-3.0 license. See [`LICENSE`](./LICENSE) for more information.
+Distributed under the MIT license. See [`LICENSE`](./LICENSE.md) for more information.
 
 ## 📢 Contact
 

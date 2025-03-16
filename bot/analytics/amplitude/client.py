@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import orjson
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from loguru import logger
 
 from bot.analytics.types import AbstractAnalyticsLogger, BaseEvent
@@ -14,7 +14,7 @@ class AmplitudeTelegramLogger(AbstractAnalyticsLogger):
         self._api_token: str = api_token
         self._base_url: str = base_url
         self._headers = {"Content-Type": "application/json", "Accept": "*/*"}
-        self._timeout = 15
+        self._timeout = ClientTimeout(total=15)
         self.SUCCESS_STATUS_CODE = 200
 
     async def _send_request(
@@ -24,17 +24,20 @@ class AmplitudeTelegramLogger(AbstractAnalyticsLogger):
         """Implementation of interaction with Amplitude API."""
         data = {"api_key": self._api_token, "events": [event.to_dict()]}
 
-        async with ClientSession() as session, session.post(
-            self._base_url,
-            headers=self._headers,
-            data=orjson.dumps(data),
-            timeout=self._timeout,
-        ) as response:
+        async with (
+            ClientSession() as session,
+            session.post(
+                self._base_url,
+                headers=self._headers,
+                data=orjson.dumps(data),
+                timeout=self._timeout,
+            ) as response,
+        ):
             json_response = await response.json(content_type="application/json")
 
         self._validate_response(json_response)
 
-    def _validate_response(self, response: dict) -> None:
+    def _validate_response(self, response: dict[str, str | int]) -> None:
         """Validate response."""
         if response.get("code") != self.SUCCESS_STATUS_CODE:
             error = response.get("error")

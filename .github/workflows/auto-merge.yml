@@ -1,22 +1,18 @@
 name: Automerge Dependabot PRs
-on: pull_request_target
 
-permissions:
-  pull-requests: write
-  contents: write
+on:
+  workflow_run:
+    workflows: [Linting]
+    types: [completed]
 
 jobs:
-  dependabot:
+  merge-me:
+    name: Merge me!
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@v2
+      - name: Merge me!
+        uses: ridedott/merge-me-action@v2
         with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
-      - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.AUTOMERGE_GITHUB_ACCESS_TOKEN }}
+    timeout-minutes: 5

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 from aiogram import BaseMiddleware, Bot
 from aiogram.enums import ChatMemberStatus
@@ -7,7 +7,9 @@ from aiogram.exceptions import TelegramNotFound
 from aiogram.methods import GetChatMember
 
 if TYPE_CHECKING:
-    from aiogram.types import Message
+    from collections.abc import Awaitable, Callable
+
+    from aiogram.types import TelegramObject, User
 
 
 class ChannelSubscribeMiddleware(BaseMiddleware):
@@ -19,16 +21,15 @@ class ChannelSubscribeMiddleware(BaseMiddleware):
 
     async def __call__(
         self,
-        handler: Callable[[Message, dict[str, Any]], Awaitable[Any]],
-        event: Message,
+        handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
+        event: TelegramObject,
         data: dict[str, Any],
     ) -> Any:
-        message: Message = event
-
-        if not message.from_user:
+        user: User | None = getattr(event, "from_user", None)
+        if not user:
             return await handler(event, data)
 
-        user_id = message.from_user.id
+        user_id = user.id
         bot: Bot = data["bot"]
 
         if await self._is_subscribed(bot=bot, user_id=user_id):
@@ -45,16 +46,16 @@ class ChannelSubscribeMiddleware(BaseMiddleware):
                 except TelegramNotFound:
                     return False
 
-                if member.status in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED, ChatMemberStatus.RESTRICTED):
+                if member.status in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED, ChatMemberStatus.RESTRICTED}:
                     return False
 
-        elif isinstance(self.chat_ids, (str, int)):
+        elif isinstance(self.chat_ids, str | int):
             try:
                 member = await bot(GetChatMember(chat_id=self.chat_ids, user_id=user_id))
             except TelegramNotFound:
                 return False
 
-            if member.status in (ChatMemberStatus.LEFT, ChatMemberStatus.KICKED):
+            if member.status in {ChatMemberStatus.LEFT, ChatMemberStatus.KICKED}:
                 return False
 
         return True

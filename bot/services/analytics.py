@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import wraps
-from typing import Any, Awaitable, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from aiogram.types import CallbackQuery, Message
 
@@ -9,14 +9,20 @@ from bot.analytics.types import AbstractAnalyticsLogger, BaseEvent, EventPropert
 from bot.core.config import settings
 from bot.utils.singleton import SingletonMeta
 
-T = TypeVar("T")
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
+_Func = TypeVar("_Func")
 
 
 class AnalyticsService(metaclass=SingletonMeta):
-    def __init__(self, logger: AbstractAnalyticsLogger) -> None:
+    def __init__(self, logger: AbstractAnalyticsLogger | None) -> None:
         self.logger = logger
 
     async def _track_error(self, user_id: int, error_text: str) -> None:
+        if not self.logger:
+            return
+
         await self.logger.log_event(
             BaseEvent(
                 user_id=user_id,
@@ -25,13 +31,21 @@ class AnalyticsService(metaclass=SingletonMeta):
             ),
         )
 
-    def track_event(self, event_name: EventType) -> Callable:
+    def track_event(
+        self,
+        event_name: EventType,
+    ) -> Callable[[Callable[..., Awaitable[_Func]]], Callable[..., Awaitable[_Func]]]:
         """Decorator for tracking events in Amplitude, Google Analytics or Posthog."""
 
-        def decorator(handler: Callable[[Message | CallbackQuery, dict[str, Any]], Awaitable[Any]]) -> Callable:
+        def decorator(
+            handler: Callable[[Message | CallbackQuery, dict[str, Any]], Awaitable[_Func]],
+        ) -> Callable[..., Awaitable[_Func]]:
             @wraps(handler)
-            async def wrapper(update: Message | CallbackQuery, *args: dict[str, T]) -> T | None:
-                if (isinstance(update, (Message, CallbackQuery))) and update.from_user:
+            async def wrapper(update: Message | CallbackQuery, *args: Any) -> Any:
+                if not self.logger:
+                    return await handler(update, *args)
+
+                if (isinstance(update, Message | CallbackQuery)) and update.from_user:
                     user_id = update.from_user.id
                     first_name = update.from_user.first_name
                     last_name = update.from_user.last_name
@@ -41,6 +55,8 @@ class AnalyticsService(metaclass=SingletonMeta):
                 else:
                     return None
 
+                chat_id: int | None
+                chat_type: str | None
                 if isinstance(update, Message):
                     chat_id = update.chat.id
                     chat_type = update.chat.type
@@ -83,4 +99,6 @@ class AnalyticsService(metaclass=SingletonMeta):
         return decorator
 
 
-analytics = AnalyticsService(AmplitudeTelegramLogger(api_token=settings.AMPLITUDE_API_KEY))
+logger = AmplitudeTelegramLogger(api_token=settings.AMPLITUDE_API_KEY) if settings.AMPLITUDE_API_KEY else None
+
+analytics = AnalyticsService(logger)
